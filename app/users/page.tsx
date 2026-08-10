@@ -30,7 +30,7 @@ export default function UsersPage() {
   useEffect(() => {
     if (!user) return;
     api
-      .get("/users/")
+      .get("/api/users/")
       .then((res) => setUsers(res.data.results || res.data))
       .catch((err) => {
         console.error(err);

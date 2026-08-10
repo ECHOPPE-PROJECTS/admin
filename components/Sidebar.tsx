@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, House, Settings, Users, Info, Mail, User } from "lucide-react";
+import { Bell, House, Settings, Users, Info } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const sidebarItems = [
@@ -27,7 +27,7 @@ export default function Sidebar() {
 
         <nav className="space-y-1 flex-1">
           {sidebarItems.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
             const Icon = item.icon;
             return (
               <Link

@@ -28,7 +28,7 @@ export default function IncidentsPage() {
   useEffect(() => {
     if (!user) return;
     api
-      .get("/incidents/")
+      .get("/api/incidents/")
       .then((res) => setIncidents(res.data.results || res.data))
       .catch((err) => console.error(err));
   }, [user]);
