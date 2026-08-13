@@ -1,17 +1,15 @@
 import axios, { type AxiosResponse } from "axios";
-import {
-  Alerte_INCIDENTItem,
-  NotificationItem,
+import type {
   AuditItem,
-  StatusItem,
+  DashboardStats,
+  IncidentItem,
+  IncidentStatistic,
+  NotificationItem,
   PriorityItem,
-  UserCountItem,
-  StatistiqueItem,
+  StatusItem,
+  UserItem,
 } from "@/type";
 
-/**
- * Le backend Django REST est accessible via NEXT_PUBLIC_API_URL.
- */
 const API_BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-t8k0.onrender.com";
 
 const api = axios.create({
@@ -30,6 +28,102 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+type FailedRequest = {
+  resolve: (value?: string | null) => void;
+  reject: (error: unknown) => void;
+  config: unknown;
+};
+
+let isRefreshing = false;
+let failedQueue: FailedRequest[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((p) => {
+    if (error) p.reject(error);
+    else p.resolve(token);
+  });
+  failedQueue = [];
+};
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error?.config;
+    if (!originalRequest) return Promise.reject(error);
+
+    const status = error?.response?.status;
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      if (typeof window === "undefined") return Promise.reject(error);
+
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        localStorage.clear();
+        window.location.href = "/login";
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject, config: originalRequest });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      isRefreshing = true;
+
+      const refreshEndpoints = [
+        "/api/auth/refresh/",
+        "/api/auth/token/refresh/",
+        "/api/token/refresh/",
+      ];
+
+      try {
+        let newAccess: string | null = null;
+        let refreshError: unknown = null;
+
+        for (const ep of refreshEndpoints) {
+          try {
+            const resp = await api.post(ep, { refresh: refreshToken });
+            newAccess = resp?.data?.access ?? resp?.data?.token ?? null;
+            if (newAccess) break;
+          } catch (e) {
+            refreshError = e;
+          }
+        }
+
+        if (!newAccess) {
+          processQueue(refreshError || error, null);
+          localStorage.clear();
+          window.location.href = "/login";
+          return Promise.reject(refreshError || error);
+        }
+
+        localStorage.setItem("access_token", newAccess);
+        api.defaults.headers.common["Authorization"] = `Bearer ${newAccess}`;
+        processQueue(null, newAccess);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+        return api(originalRequest);
+      } catch (e) {
+        processQueue(e, null);
+        localStorage.clear();
+        window.location.href = "/login";
+        return Promise.reject(e);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default api;
 
@@ -61,9 +155,9 @@ const handleAxiosError = (error: unknown): never => {
   throw error;
 };
 
-export async function getAlerte_INCIDENTItems(): Promise<Alerte_INCIDENTItem[]> {
+export async function getIncidentItems(): Promise<IncidentItem[]> {
   try {
-    const rep: AxiosResponse<ListResponse<Alerte_INCIDENTItem>> = await api.get(`/api/incidents/`);
+    const rep: AxiosResponse<ListResponse<IncidentItem>> = await api.get(`/api/incidents/`);
     return rep.status === 200 ? parseListResponse(rep.data) : [];
   } catch (error) {
     return handleAxiosError(error);
@@ -88,6 +182,23 @@ export async function getAuditItems(): Promise<AuditItem[]> {
   }
 }
 
+export async function getUsers(): Promise<UserItem[]> {
+  try {
+    const rep: AxiosResponse<ListResponse<UserItem>> = await api.get(`/api/users/`);
+    return rep.status === 200 ? parseListResponse(rep.data) : [];
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/users/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
 export async function getStatus(): Promise<StatusItem[]> {
   try {
     const rep: AxiosResponse<ListResponse<StatusItem>> = await api.get(`/api/statuses/`);
@@ -106,17 +217,35 @@ export async function getPriority(): Promise<PriorityItem[]> {
   }
 }
 
-export async function getUserCount(): Promise<UserCountItem[]> {
+export async function getIncidentStatistics(): Promise<IncidentStatistic[]> {
   try {
-    const rep: AxiosResponse<ListResponse<UserCountItem>> = await api.get(`/api/users/`);
-    return rep.status === 200 ? parseListResponse(rep.data) : [];
+    const incidents = await getIncidentItems();
+    const counts = new Map<string, number>();
+    incidents.forEach((incident) => {
+      const name = incident.status?.name || "Sans statut";
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    return Array.from(counts.entries()).map(([name, value]) => ({ name, value }));
   } catch (error) {
     return handleAxiosError(error);
   }
 }
 
-export async function getStatistiqueItems(): Promise<StatistiqueItem[]> {
-  throw new Error(
-    "Le backend n'expose pas de route /api/statistiques/. Ajoutez `statistique.urls` au routeur Django ou supprimez cet appel.",
-  );
+export async function getDashboardStats(): Promise<DashboardStats> {
+  try {
+    const [users, incidents, notifications, activities] = await Promise.all([
+      getUsers(),
+      getIncidentItems(),
+      getNotificationItems(),
+      getAuditItems(),
+    ]);
+    return {
+      users: users.length,
+      incidents: incidents.length,
+      notifications: notifications.length,
+      activities: activities.length,
+    };
+  } catch (error) {
+    return handleAxiosError(error);
+  }
 }

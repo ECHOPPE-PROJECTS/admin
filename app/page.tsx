@@ -1,12 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
+import { getDashboardStats, getNotificationItems } from "@/lib/api";
+import type { DashboardStats, NotificationItem } from "@/type";
 import Statistique from "./statistique/state";
 
 export default function Home() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats>({
+    users: 0,
+    incidents: 0,
+    notifications: 0,
+    activities: 0,
+  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    getDashboardStats()
+      .then(setStats)
+      .catch(() => setError("Impossible de charger les statistiques du tableau de bord."));
+    getNotificationItems()
+      .then((items) => setNotifications(items.slice(0, 5)))
+      .catch(() => {});
+  }, [user]);
+
+  if (loading) {
+    return <div className="p-8 text-center">Chargement...</div>;
+  }
+
+  if (!user) return null;
+
   const cards = [
-    { title: "Utilisateurs", value: "--", helper: "Actifs et rôles" },
-    { title: "Incidents", value: "--", helper: "Ouverts / assignés" },
-    { title: "Notifications", value: "--", helper: "Alertes récentes" },
-    { title: "Activité", value: "--", helper: "Logs administrateurs" },
+    { title: "Utilisateurs", value: stats.users, helper: "Actifs et rôles" },
+    { title: "Incidents", value: stats.incidents, helper: "Ouverts / assignés" },
+    { title: "Notifications", value: stats.notifications, helper: "Alertes récentes" },
+    { title: "Activité", value: stats.activities, helper: "Logs administrateurs" },
   ];
 
   return (
@@ -22,7 +62,7 @@ export default function Home() {
                 Tableau de bord incidents
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-                Visualise rapidement l’activité, les incidents et la connectivité avec le backend Django REST.
+                {user.first_name || user.username}, voici l’activité du backend Django REST.
               </p>
             </div>
             <Link
@@ -32,6 +72,12 @@ export default function Home() {
               Gérer les utilisateurs
             </Link>
           </div>
+
+          {error && (
+            <div className="mt-6 rounded-3xl bg-red-500/10 p-4 text-sm text-red-300 ring-1 ring-red-500/30">
+              {error}
+            </div>
+          )}
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
@@ -58,9 +104,6 @@ export default function Home() {
                 </p>
                 <h2 className="text-2xl font-semibold text-white">Statistiques des incidents</h2>
               </div>
-              <span className="inline-flex rounded-full bg-slate-900/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-300">
-                Liquid Glass
-              </span>
             </div>
 
             <div className="rounded-[1.75rem] border border-white/15 bg-slate-950/40 p-4 shadow-inner shadow-slate-950/20">
@@ -70,23 +113,34 @@ export default function Home() {
 
           <div className="space-y-6 rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-slate-950/25 backdrop-blur-xl">
             <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/40 p-5">
-              <h2 className="text-lg font-semibold text-white">Prochaines étapes</h2>
+              <h2 className="text-lg font-semibold text-white">Notifications récentes</h2>
               <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                <li>• Ajouter des pages de gestion des utilisateurs et des incidents.</li>
-                <li>• Consommer l’API Django REST du backend.</li>
-                <li>• Implémenter l’authentification et la protection des routes.</li>
-                <li>• Ajouter des indicateurs en temps réel et des logs d’activité.</li>
+                {notifications.map((notification) => (
+                  <li key={notification.id} className="flex items-start justify-between gap-3">
+                    <span>{notification.message}</span>
+                    {notification.created_at && (
+                      <span className="shrink-0 text-xs text-slate-500">
+                        {new Date(notification.created_at).toLocaleDateString("fr-FR")}
+                      </span>
+                    )}
+                  </li>
+                ))}
+                {notifications.length === 0 && (
+                  <li className="text-slate-500">Aucune notification récente.</li>
+                )}
               </ul>
             </div>
 
             <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/40 p-5">
-              <h2 className="text-lg font-semibold text-white">Connectivité</h2>
+              <h2 className="text-lg font-semibold text-white">Connexion au backend</h2>
               <p className="mt-4 text-sm leading-6 text-slate-300">
-                Le projet admin peut consommer le backend Django via des appels API REST. Pense à définir
-                <code className="ml-1 whitespace-pre rounded bg-slate-900/70 px-1.5 py-0.5 text-xs text-slate-200">
-                  NEXT_PUBLIC_API_URL
-                </code>
+                {error
+                  ? "Le backend est actuellement injoignable."
+                  : "Connecté à l’API Django REST."}
               </p>
+              <code className="mt-2 inline-block whitespace-pre rounded bg-slate-900/70 px-1.5 py-0.5 text-xs text-slate-200">
+                {process.env.NEXT_PUBLIC_API_URL || "https://backend-t8k0.onrender.com"}
+              </code>
             </div>
           </div>
         </div>

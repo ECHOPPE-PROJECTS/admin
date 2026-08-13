@@ -3,23 +3,15 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import api from "@/lib/api";
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: { name: string } | null;
-  department: { name: string } | null;
-  is_active: boolean;
-}
+import { deleteUser, getUsers } from "@/lib/api";
+import type { UserItem } from "@/type";
 
 export default function UsersPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -29,13 +21,24 @@ export default function UsersPage() {
 
   useEffect(() => {
     if (!user) return;
-    api
-      .get("/api/users/")
-      .then((res) => setUsers(res.data.results || res.data))
-      .catch((err) => {
-        console.error(err);
-      });
+    getUsers()
+      .then(setUsers)
+      .catch(() => setError("Impossible de charger la liste des utilisateurs."));
   }, [user]);
+
+  const handleDelete = async (id: number, username: string) => {
+    if (!window.confirm(`Supprimer définitivement l’utilisateur « ${username} » ?`)) return;
+    setDeletingId(id);
+    setError("");
+    try {
+      await deleteUser(id);
+      setUsers((prev) => prev.filter((item) => item.id !== id));
+    } catch {
+      setError("La suppression a échoué. Vérifie tes permissions.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
@@ -53,6 +56,12 @@ export default function UsersPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-3xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200">
+            {error}
+          </div>
+        )}
+
         <div className="overflow-hidden rounded-3xl bg-white shadow ring-1 ring-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
@@ -62,21 +71,32 @@ export default function UsersPage() {
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Rôle</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Département</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Actif</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
               {users.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-4 text-slate-900">{item.first_name} {item.last_name}</td>
+                  <td className="px-4 py-4 text-slate-900">{item.username}</td>
                   <td className="px-4 py-4 text-slate-700">{item.email}</td>
                   <td className="px-4 py-4 text-slate-700">{item.role?.name || "—"}</td>
                   <td className="px-4 py-4 text-slate-700">{item.department?.name || "—"}</td>
                   <td className="px-4 py-4 text-slate-700">{item.is_active ? "Oui" : "Non"}</td>
+                  <td className="px-4 py-4 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.id, item.username)}
+                      disabled={deletingId === item.id || item.id === user.id}
+                      className="rounded-2xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deletingId === item.id ? "Suppression..." : "Supprimer"}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                     Aucun utilisateur trouvé.
                   </td>
                 </tr>

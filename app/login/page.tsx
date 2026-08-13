@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 
@@ -19,9 +20,18 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-    } catch (err) {
-      setError("Échec de la connexion. Vérifie ton email et ton mot de passe.");
-      console.error(err);
+      } catch (err) {
+        let msg = "Échec de la connexion. Vérifie ton email et ton mot de passe.";
+        if (axios.isAxiosError(err) && err.response) {
+          const data = err.response.data as Record<string, unknown>;
+          if (typeof data?.detail === "string") msg = data.detail;
+          else if (Array.isArray(data?.non_field_errors)) msg = String(data.non_field_errors[0]);
+          else if (typeof data?.non_field_errors === "string") msg = data.non_field_errors;
+          else if (Array.isArray(data?.email)) msg = String(data.email[0]);
+          else if (typeof data?.email === "string") msg = data.email;
+        }
+        setError(msg);
+        console.error(err);
     } finally {
       setLoading(false);
     }

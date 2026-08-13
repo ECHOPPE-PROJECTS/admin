@@ -1,8 +1,8 @@
 "use client";
 
-import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 
 interface User {
   id: number;
@@ -23,25 +23,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-t8k0.onrender.com";
-
-const axiosClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-axiosClient.interceptors.request.use((config) => {
-  if (typeof window !== "undefined" && config.headers) {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +37,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const res = await axiosClient.get("/api/users/me/");
+        const res = await api.get("/api/users/me/");
         setUser(res.data);
       } catch {
         localStorage.clear();
@@ -70,11 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data } = await axiosClient.post("/api/auth/login/", { email, password });
+    const { data } = await api.post("/api/auth/login/", { email, password });
     localStorage.setItem("access_token", data.access);
     localStorage.setItem("refresh_token", data.refresh);
 
-    const me = await axiosClient.get("/api/users/me/");
+    const me = await api.get("/api/users/me/");
     setUser(me.data);
     router.push("/");
   };

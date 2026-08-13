@@ -47,9 +47,9 @@ export default function Sidebar() {
         </nav>
 
         <div className="mt-8 rounded-3xl bg-slate-900 p-4 text-sm text-slate-400 ring-1 ring-slate-800">
-          <div className="font-semibold text-slate-100">Statut</div>
+          <div className="font-semibold text-slate-100">Espace admin</div>
           <p className="mt-2 text-sm leading-6">
-            Interface admin en cours de développement. Ajoutez des pages d’administration et des appels API côté backend.
+            Gérez les incidents, les utilisateurs et suivez les activités .
           </p>
         </div>
       </div>

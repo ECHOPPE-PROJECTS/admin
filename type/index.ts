@@ -1,44 +1,56 @@
-export interface Alerte_INCIDENTItem {
-    id: number;
-    title: string;
-    date: string;
+export interface UserItem {
+  id: number;
+  username: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: { id?: number; name: string } | null;
+  department: { id?: number; name: string } | null;
+  is_active: boolean;
+}
+
+export interface IncidentItem {
+  id: number;
+  numero_ticket: string;
+  title: string;
+  status: { id?: number; name: string } | null;
+  priority: { id?: number; name: string } | null;
+  created_at: string;
 }
 
 export interface NotificationItem {
-    id: number;
-    message: string;
-    date: string;
+  id: number;
+  message: string;
+  created_at?: string;
 }
 
 export interface AuditItem {
-    id: number;
-    action: string;
-    user: string;
-    date: string;
+  id: number;
+  user: string;
+  action: string;
+  description: string;
+  ip_address: string | null;
+  created_at: string;
 }
 
 export interface StatusItem {
-    id: number;
-    status: string;
+  id: number;
+  name: string;
 }
 
 export interface PriorityItem {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }
 
-export interface UserCountItem {
-    id: number;
-    username: string;
-    count: number;
+export interface IncidentStatistic {
+  name: string;
+  value: number;
 }
 
-export interface StatistiqueItem {
-    id: number;
-    user: string;
-    period_type: string;
-    period_start: string;
-    period_end: string;
-    incident_count: number;
-    update_at: string;
+export interface DashboardStats {
+  users: number;
+  incidents: number;
+  notifications: number;
+  activities: number;
 }

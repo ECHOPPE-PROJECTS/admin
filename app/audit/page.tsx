@@ -49,7 +49,7 @@ export default function AuditPage() {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Audit</h1>
-            <p className="mt-1 text-sm text-slate-500">Derniers journaux d'activité du backend.</p>
+            <p className="mt-1 text-sm text-slate-500">Derniers journaux d&apos;activité du backend.</p>
           </div>
         </div>
 
@@ -85,7 +85,7 @@ export default function AuditPage() {
               {entries.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
-                    Aucun journal d'activité trouvé.
+                    Aucun journal d&apos;activité trouvé.
                   </td>
                 </tr>
               )}
