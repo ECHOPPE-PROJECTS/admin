@@ -191,6 +191,55 @@ export async function getUsers(): Promise<UserItem[]> {
   }
 }
 
+export async function createUser(payload: Record<string, unknown>): Promise<UserItem> {
+  const cleanedPayload = Object.fromEntries(
+    Object.entries(payload).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  ) as Record<string, unknown>;
+
+  const variants = [
+    cleanedPayload,
+    { ...cleanedPayload, role: cleanedPayload.role ?? null, department: cleanedPayload.department ?? null },
+    {
+      ...cleanedPayload,
+      role_id: cleanedPayload.role ?? undefined,
+      department_id: cleanedPayload.department ?? undefined,
+    },
+  ];
+
+  const endpoints = ["/api/users/", "/api/users/create/", "/api/auth/register/", "/api/users/register/"];
+
+  let lastError: unknown = null;
+
+  for (const endpoint of endpoints) {
+    for (const variation of variants) {
+      try {
+        const response = await api.post(endpoint, variation);
+        return response.data;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+  }
+
+  if (axios.isAxiosError(lastError)) {
+    const detail = lastError.response?.data;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : detail && typeof detail === "object"
+          ? (detail as { detail?: string; message?: string; error?: string }).detail ||
+            (detail as { detail?: string; message?: string; error?: string }).message ||
+            (detail as { detail?: string; message?: string; error?: string }).error ||
+            "Impossible de créer l’utilisateur."
+          : "Impossible de créer l’utilisateur.";
+    throw new Error(message);
+  }
+
+  throw new Error("Impossible de créer l’utilisateur.");
+}
+
 export async function deleteUser(id: number): Promise<void> {
   try {
     await api.delete(`/api/users/${id}/`);
