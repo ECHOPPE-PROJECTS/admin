@@ -51,13 +51,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data } = await api.post("/api/auth/login/", { email, password });
-    localStorage.setItem("access_token", data.access);
-    localStorage.setItem("refresh_token", data.refresh);
+    const attempts = [
+      { email, password },
+      { username: email, password },
+    ];
 
-    const me = await api.get("/api/users/me/");
-    setUser(me.data);
-    router.push("/");
+    let lastError: unknown = null;
+
+    for (const payload of attempts) {
+      try {
+        const { data } = await api.post("/api/auth/login/", payload);
+        const accessToken = data.access ?? data.token;
+        const refreshToken = data.refresh ?? data.refresh_token ?? null;
+
+        if (!accessToken) {
+          continue;
+        }
+
+        localStorage.setItem("access_token", accessToken);
+        if (refreshToken) {
+          localStorage.setItem("refresh_token", refreshToken);
+        }
+
+        const me = await api.get("/api/users/me/");
+        setUser(me.data);
+        router.push("/");
+        return;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError ?? new Error("Échec de la connexion.");
   };
 
   const logout = () => {

@@ -9,10 +9,19 @@ interface Incident {
   id: number;
   numero_ticket: string;
   title: string;
+  author: { first_name: string; last_name: string; email: string };
   status: { name: string };
   priority: { name: string };
   created_at: string;
 }
+
+const statusColors: Record<string, string> = {
+  Nouveau: "bg-yellow-100 text-yellow-800",
+  Assigné: "bg-purple-100 text-purple-800",
+  "En cours": "bg-orange-100 text-orange-800",
+  Résolu: "bg-green-100 text-green-800",
+  Fermé: "bg-gray-100 text-gray-600",
+};
 
 export default function IncidentsPage() {
   const { user, loading } = useAuth();
@@ -45,7 +54,9 @@ export default function IncidentsPage() {
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900">Incidents</h1>
-            <p className="mt-1 text-sm text-slate-500">Liste des tickets disponibles depuis le backend.</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Gérez les tickets, assignez des techniciens et suivez les statuts.
+            </p>
           </div>
         </div>
 
@@ -55,6 +66,7 @@ export default function IncidentsPage() {
               <tr>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Ticket</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Titre</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Auteur</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Statut</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Priorité</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-600">Créé le</th>
@@ -67,10 +79,21 @@ export default function IncidentsPage() {
                   className="cursor-pointer hover:bg-slate-50"
                   onClick={() => router.push(`/incidents/${incident.id}`)}
                 >
-                  <td className="px-4 py-4 text-slate-900">{incident.numero_ticket}</td>
+                  <td className="px-4 py-4 font-medium text-slate-900">{incident.numero_ticket}</td>
                   <td className="px-4 py-4 text-slate-700">{incident.title}</td>
-                  <td className="px-4 py-4 text-slate-700">{incident.status.name}</td>
-                  <td className="px-4 py-4 text-slate-700">{incident.priority.name}</td>
+                  <td className="px-4 py-4 text-slate-700">
+                    {incident.author?.first_name} {incident.author?.last_name}
+                  </td>
+                  <td className="px-4 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        statusColors[incident.status?.name] || "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {incident.status?.name || "N/A"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 text-slate-700">{incident.priority?.name || "N/A"}</td>
                   <td className="px-4 py-4 text-slate-700">
                     {new Date(incident.created_at).toLocaleDateString("fr-FR")}
                   </td>
@@ -78,7 +101,7 @@ export default function IncidentsPage() {
               ))}
               {incidents.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                     Aucun incident trouvé.
                   </td>
                 </tr>

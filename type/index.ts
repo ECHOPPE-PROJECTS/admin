@@ -54,3 +54,37 @@ export interface DashboardStats {
   notifications: number;
   activities: number;
 }
+
+export interface DiscussionItem {
+  id: number;
+  title: string;
+  participants: UserItem[];
+  created_at: string;
+  last_message: MessageItem | null;
+  messages_count: number;
+}
+
+export interface MessageItem {
+  id: number;
+  user: UserItem;
+  discussion: number;
+  content: string;
+  created_at: string;
+}
+
+export interface IncidentDetailItem {
+  id: number;
+  numero_ticket: string;
+  title: string;
+  description: string;
+  author: UserItem;
+  technician: UserItem | null;
+  category: { id: number; name: string } | null;
+  priority: { id: number; name: string } | null;
+  status: { id: number; name: string } | null;
+  comments: { id: number; author: UserItem; content: string; created_at: string }[];
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  closed_at: string | null;
+}

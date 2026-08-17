@@ -2,8 +2,11 @@ import axios, { type AxiosResponse } from "axios";
 import type {
   AuditItem,
   DashboardStats,
+  DiscussionItem,
+  IncidentDetailItem,
   IncidentItem,
   IncidentStatistic,
+  MessageItem,
   NotificationItem,
   PriorityItem,
   StatusItem,
@@ -294,6 +297,86 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       notifications: notifications.length,
       activities: activities.length,
     };
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getIncidentDetail(id: number): Promise<IncidentDetailItem> {
+  try {
+    const rep: AxiosResponse<IncidentDetailItem> = await api.get(`/api/incidents/${id}/`);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function assignIncident(incidentId: number, technicianId: number): Promise<IncidentDetailItem> {
+  try {
+    const rep: AxiosResponse<IncidentDetailItem> = await api.post(`/api/incidents/${incidentId}/assign/`, {
+      technician_id: technicianId,
+    });
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function resolveIncident(incidentId: number): Promise<IncidentDetailItem> {
+  try {
+    const rep: AxiosResponse<IncidentDetailItem> = await api.post(`/api/incidents/${incidentId}/resolve/`);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function closeIncident(incidentId: number): Promise<IncidentDetailItem> {
+  try {
+    const rep: AxiosResponse<IncidentDetailItem> = await api.post(`/api/incidents/${incidentId}/close/`);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getDiscussionItems(): Promise<DiscussionItem[]> {
+  try {
+    const rep: AxiosResponse<ListResponse<DiscussionItem>> = await api.get(`/api/discussions/`);
+    return rep.status === 200 ? parseListResponse(rep.data) : [];
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getDiscussionDetail(id: number): Promise<DiscussionItem & { messages: MessageItem[] }> {
+  try {
+    const rep: AxiosResponse<DiscussionItem & { messages: MessageItem[] }> = await api.get(`/api/discussions/${id}/`);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createDiscussion(title: string | null, participantIds: number[]): Promise<DiscussionItem> {
+  try {
+    const rep: AxiosResponse<DiscussionItem> = await api.post(`/api/discussions/`, {
+      title,
+      participants: participantIds,
+    });
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function sendMessage(discussionId: number, content: string): Promise<MessageItem> {
+  try {
+    const rep: AxiosResponse<MessageItem> = await api.post(`/api/messages/`, {
+      discussion: discussionId,
+      content,
+    });
+    return rep.data;
   } catch (error) {
     return handleAxiosError(error);
   }
