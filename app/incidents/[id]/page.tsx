@@ -9,6 +9,7 @@ import {
   assignIncident,
   resolveIncident,
   closeIncident,
+  createComment,
 } from "@/lib/api";
 import type { IncidentDetailItem, UserItem } from "@/type";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ export default function IncidentDetailPage() {
   const [incident, setIncident] = useState<IncidentDetailItem | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [selectedTech, setSelectedTech] = useState<number | null>(null);
+  const [commentText, setCommentText] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -61,6 +64,22 @@ export default function IncidentDetailPage() {
       toast.success("Ticket fermé");
     } catch {
       toast.error("Erreur lors de la fermeture");
+    }
+  };
+
+  const handleComment = async () => {
+    if (!incident || !commentText.trim()) return;
+    setSending(true);
+    try {
+      await createComment(incident.id, commentText.trim());
+      setCommentText("");
+      const updated = await getIncidentDetail(incident.id);
+      setIncident(updated);
+      toast.success("Commentaire envoyé");
+    } catch {
+      toast.error("Erreur lors de l'envoi du commentaire");
+    } finally {
+      setSending(false);
     }
   };
 
@@ -199,11 +218,31 @@ export default function IncidentDetailPage() {
             </div>
           </div>
 
-          {incident.comments.length > 0 && (
-            <div className="mt-6">
-              <h3 className="mb-4 text-sm font-semibold text-slate-700">
-                Commentaires ({incident.comments.length})
-              </h3>
+          <div className="mt-6">
+            <h3 className="mb-4 text-sm font-semibold text-slate-700">
+              Commentaires ({incident.comments.length})
+            </h3>
+
+            <div className="mb-4 flex gap-3">
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Écrire un commentaire..."
+                rows={3}
+                className="flex-1 rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={handleComment}
+                disabled={!commentText.trim() || sending}
+                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+              >
+                {sending ? "Envoi..." : "Envoyer"}
+              </button>
+            </div>
+
+            {incident.comments.length > 0 && (
               <div className="space-y-3">
                 {incident.comments.map((c) => (
                   <div key={c.id} className="rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
@@ -219,8 +258,8 @@ export default function IncidentDetailPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

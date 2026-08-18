@@ -1,7 +1,10 @@
 import axios, { type AxiosResponse } from "axios";
 import type {
   AuditItem,
+  CategoryItem,
+  CommentItem,
   DashboardStats,
+  DepartmentItem,
   DiscussionItem,
   IncidentDetailItem,
   IncidentItem,
@@ -9,6 +12,7 @@ import type {
   MessageItem,
   NotificationItem,
   PriorityItem,
+  RoleItem,
   StatusItem,
   UserItem,
 } from "@/type";
@@ -374,6 +378,130 @@ export async function sendMessage(discussionId: number, content: string): Promis
   try {
     const rep: AxiosResponse<MessageItem> = await api.post(`/api/messages/`, {
       discussion: discussionId,
+      content,
+    });
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getCategories(): Promise<CategoryItem[]> {
+  try {
+    const rep: AxiosResponse<ListResponse<CategoryItem>> = await api.get(`/api/categories/`);
+    return rep.status === 200 ? parseListResponse(rep.data) : [];
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createCategory(data: { name: string; description?: string }): Promise<CategoryItem> {
+  try {
+    const rep: AxiosResponse<CategoryItem> = await api.post(`/api/categories/`, data);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deleteCategory(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/categories/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getRoles(): Promise<RoleItem[]> {
+  try {
+    const rep: AxiosResponse<ListResponse<RoleItem>> = await api.get(`/api/roles/`);
+    return rep.status === 200 ? parseListResponse(rep.data) : [];
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createRole(data: { name: string; description?: string }): Promise<RoleItem> {
+  try {
+    const rep: AxiosResponse<RoleItem> = await api.post(`/api/roles/`, data);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deleteRole(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/roles/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function getDepartments(): Promise<DepartmentItem[]> {
+  try {
+    const rep: AxiosResponse<ListResponse<DepartmentItem>> = await api.get(`/api/departments/`);
+    return rep.status === 200 ? parseListResponse(rep.data) : [];
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createDepartment(data: { name: string; description?: string }): Promise<DepartmentItem> {
+  try {
+    const rep: AxiosResponse<DepartmentItem> = await api.post(`/api/departments/`, data);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deleteDepartment(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/departments/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createStatus(data: { name: string; description?: string }): Promise<StatusItem> {
+  try {
+    const rep: AxiosResponse<StatusItem> = await api.post(`/api/statuses/`, data);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deleteStatus(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/statuses/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createPriority(data: { name: string; level: number; sla_hours?: number | null }): Promise<PriorityItem> {
+  try {
+    const rep: AxiosResponse<PriorityItem> = await api.post(`/api/priorities/`, data);
+    return rep.data;
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function deletePriority(id: number): Promise<void> {
+  try {
+    await api.delete(`/api/priorities/${id}/`);
+  } catch (error) {
+    return handleAxiosError(error);
+  }
+}
+
+export async function createComment(incidentId: number, content: string): Promise<CommentItem> {
+  try {
+    const rep: AxiosResponse<CommentItem> = await api.post(`/api/comments/`, {
+      incident: incidentId,
       content,
     });
     return rep.data;

@@ -36,11 +36,33 @@ export interface AuditItem {
 export interface StatusItem {
   id: number;
   name: string;
+  description?: string;
 }
 
 export interface PriorityItem {
   id: number;
   name: string;
+  level?: number;
+  sla_hours?: number | null;
+}
+
+export interface CategoryItem {
+  id: number;
+  name: string;
+  description?: string;
+  created_at?: string;
+}
+
+export interface RoleItem {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface DepartmentItem {
+  id: number;
+  name: string;
+  description?: string;
 }
 
 export interface IncidentStatistic {
@@ -72,6 +94,13 @@ export interface MessageItem {
   created_at: string;
 }
 
+export interface CommentItem {
+  id: number;
+  author: UserItem;
+  content: string;
+  created_at: string;
+}
+
 export interface IncidentDetailItem {
   id: number;
   numero_ticket: string;
@@ -82,7 +111,7 @@ export interface IncidentDetailItem {
   category: { id: number; name: string } | null;
   priority: { id: number; name: string } | null;
   status: { id: number; name: string } | null;
-  comments: { id: number; author: UserItem; content: string; created_at: string }[];
+  comments: CommentItem[];
   created_at: string;
   updated_at: string;
   resolved_at: string | null;

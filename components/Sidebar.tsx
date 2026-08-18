@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, House, MessageSquare, Settings, Users, Info } from "lucide-react";
+import { Bell, BookOpen, History, House, MessageSquare, Settings, Users, Info } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const sidebarItems = [
   { label: "Tableau de bord", href: "/", icon: House },
   { label: "Utilisateurs", href: "/users", icon: Users },
   { label: "Incidents", href: "/incidents", icon: Bell },
+  { label: "Historique", href: "/history", icon: History },
   { label: "Messages", href: "/discussions", icon: MessageSquare },
   { label: "Paramètres", href: "/settings", icon: Settings },
+  { label: "Documentation", href: "/documentation", icon: BookOpen },
   { label: "Audit", href: "/audit", icon: Info },
 ];
 
